@@ -3,6 +3,7 @@
  */
 package live.sidian.database.autoddl.model;
 
+import live.sidian.database.autoddl.constant.IndexType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -41,7 +42,21 @@ public class Index {
     @Builder.Default
     private int priority = 1;
 
-    public enum IndexType {
-        UNIQUE, INDEX
+    /**
+     * 生成索引名.
+     * 主键名无需使用该方法, 可直接设置为PRIMARY
+     *
+     * @param tableName 表名
+     * @param fieldName 字段名
+     */
+    public void generateName(String tableName, String fieldName) {
+        assert type != IndexType.PRIMARY;
+        this.name = String.format(
+                "tb_%s_%s_%s",
+                tableName,
+                fieldName,
+                type == IndexType.INDEX ? "index" : "uindex"
+        );
     }
+
 }

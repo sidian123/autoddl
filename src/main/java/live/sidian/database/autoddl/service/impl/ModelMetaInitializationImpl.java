@@ -1,5 +1,7 @@
 package live.sidian.database.autoddl.service.impl;
 
+import live.sidian.database.autoddl.model.Column;
+import live.sidian.database.autoddl.model.Index;
 import live.sidian.database.autoddl.model.Table;
 import live.sidian.database.autoddl.service.ModelMetaInitialization;
 import live.sidian.database.autoddl.utils.BeanUtils;
@@ -8,10 +10,15 @@ import live.sidian.database.autoddl.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.persistence.Id;
+import javax.persistence.Transient;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author sidian
@@ -69,7 +76,7 @@ public class ModelMetaInitializationImpl implements ModelMetaInitialization {
         Table table = resolveTableInfo(aClass);
         // 解析所有字段
         resolveAllFields(aClass, table);
-        // 生成建表语句
+        // TODO 生成建表语句
         return table;
     }
 
@@ -79,18 +86,43 @@ public class ModelMetaInitializationImpl implements ModelMetaInitialization {
     private void resolveAllFields(Class<?> aClass, Table table) {
         // 获取所有字段
         Field[] beanFields = BeanUtils.getBeanFields(aClass);
+        // 解析主键 (联合主键有多个字段)
+        List<Field> primaryKeyFileds = Arrays.stream(beanFields)
+                .filter(field -> field.getAnnotation(Id.class) != null)
+                .collect(Collectors.toList());
+        table.getIndexes().put("PRIMARY", resolvePrimaryKey(primaryKeyFileds));
+        // 解析索引
+        List<Field> indexFields = Arrays.stream(beanFields)
+                .filter(field -> field.getAnnotation(live.sidian.database.autoddl.annotation.Index.class) != null)
+                .collect(Collectors.toList()); // 筛选
+        indexFields.forEach(field -> { // 遍历处理
+            Index temp = resolveIndex(field);
+            temp.generateName(table.getName(), field.getName());
+            table.getIndexes().put(temp.getName(), temp);
+        });
         // 解析字段
-        for (Field beanField : beanFields) {
-            resolveField(beanField, table);
-        }
+        List<Field> fields = Arrays.stream(beanFields)
+                .filter(field -> field.getAnnotation(Transient.class) == null) // 不是忽略的属性
+                .collect(Collectors.toList());
+        fields.forEach(field -> {
+            Column column = resolveField(field);
+            table.getColumns().put(column.getName(), column);
+        });
+    }
+
+    private Index resolveIndex(Field field) {
+        return null;
+    }
+
+    private Index resolvePrimaryKey(List<Field> fields) {
+        return null;
     }
 
     /**
-     * TODO 解析单个字段
+     * 解析单个字段
      */
-    private void resolveField(Field beanField, Table table) {
-        // 索引
-        // 字段
+    private Column resolveField(Field field) {
+        return null;
     }
 
     /**

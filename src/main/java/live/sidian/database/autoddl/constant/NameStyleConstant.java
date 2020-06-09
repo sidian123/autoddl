@@ -1,4 +1,4 @@
-package live.sidian.database.autoddl.utils.constant;
+package live.sidian.database.autoddl.constant;
 
 /**
  * 名字转换的样式

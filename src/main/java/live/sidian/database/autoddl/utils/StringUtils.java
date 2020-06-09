@@ -1,6 +1,6 @@
 package live.sidian.database.autoddl.utils;
 
-import live.sidian.database.autoddl.utils.constant.NameStyleConstant;
+import live.sidian.database.autoddl.constant.NameStyleConstant;
 
 import java.util.UUID;
 import java.util.regex.Matcher;
