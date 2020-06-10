@@ -1,5 +1,6 @@
 package live.sidian.database.autoddl.service.impl;
 
+import live.sidian.database.autoddl.PropertyConfig;
 import live.sidian.database.autoddl.model.Column;
 import live.sidian.database.autoddl.model.Index;
 import live.sidian.database.autoddl.model.Table;
@@ -7,11 +8,13 @@ import live.sidian.database.autoddl.service.ModelMetaInitialization;
 import live.sidian.database.autoddl.utils.BeanUtils;
 import live.sidian.database.autoddl.utils.ClassUtils;
 import live.sidian.database.autoddl.utils.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.Id;
 import javax.persistence.Transient;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -26,9 +29,8 @@ import java.util.stream.Collectors;
  */
 @Component
 public class ModelMetaInitializationImpl implements ModelMetaInitialization {
-
-    @Value("${autoddl.name-style}")
-    String nameStyle;
+    @Autowired
+    PropertyConfig propertyConfig;
 
     /**
      * Java Model信息索引
@@ -90,7 +92,8 @@ public class ModelMetaInitializationImpl implements ModelMetaInitialization {
         List<Field> primaryKeyFileds = Arrays.stream(beanFields)
                 .filter(field -> field.getAnnotation(Id.class) != null)
                 .collect(Collectors.toList());
-        table.getIndexes().put("PRIMARY", resolvePrimaryKey(primaryKeyFileds));
+        Index primaryKey = resolvePrimaryKey(primaryKeyFileds);
+        table.getIndexes().put(primaryKey.getName(), primaryKey);
         // 解析索引
         List<Field> indexFields = Arrays.stream(beanFields)
                 .filter(field -> field.getAnnotation(live.sidian.database.autoddl.annotation.Index.class) != null)
@@ -111,18 +114,31 @@ public class ModelMetaInitializationImpl implements ModelMetaInitialization {
     }
 
     private Index resolveIndex(Field field) {
-        return null;
+        return Index.builder()
+                .columns(List.of(field.getName()))
+                .type(field.getAnnotation(live.sidian.database.autoddl.annotation.Index.class).type())
+                .build();
     }
 
     private Index resolvePrimaryKey(List<Field> fields) {
-        return null;
+        return Index.builder()
+                .name("PRIMARY")
+                .columns(fields.stream().map(Field::getName).collect(Collectors.toList()))
+                .build();
     }
 
     /**
      * 解析单个字段
      */
     private Column resolveField(Field field) {
-        return null;
+        javax.persistence.Column annotation = field.getAnnotation(javax.persistence.Column.class);
+
+
+        return Column.builder()
+                .name(annotation!=null&& !StringUtils.isBlank(annotation.name())
+                        ?annotation.name():StringUtils.convertByStyle(field.getName(),propertyConfig.getNameStyle()))
+
+                .build();
     }
 
     /**
@@ -134,7 +150,7 @@ public class ModelMetaInitializationImpl implements ModelMetaInitialization {
         javax.persistence.Table tableAnnotation = aClass.getAnnotation(javax.persistence.Table.class);
         if (tableAnnotation == null || tableAnnotation.name().isEmpty()) { // 无注解, 或有注解, 但无表名
             // 设置表名, 使用类名+首字母小写
-            table.setName(StringUtils.convertByStyle(aClass.getSimpleName(), nameStyle));
+            table.setName(StringUtils.convertByStyle(aClass.getSimpleName(), propertyConfig.getNameStyle()));
         } else { // 有注解且表名存在
             table.setName(tableAnnotation.name());
         }

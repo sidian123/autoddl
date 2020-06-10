@@ -59,4 +59,27 @@ public class Index {
         );
     }
 
+    /**
+     * 生成新增索引的脚本
+     * @param tableName 表名
+     * @return 脚本
+     */
+    public String generateAddIndexScript(String tableName){
+        if(type==IndexType.PRIMARY){
+            return String.format(
+                    "alter table %s add primary key (%s)",
+                    tableName,
+                    String.join(",",columns)
+            );
+        }else{
+            return String.format(
+                    "alter table %s add %s %s (%s)",
+                    tableName,
+                    type == IndexType.INDEX?"index":"unique",
+                    name,
+                    String.join(",",columns)
+            );
+        }
+    }
+
 }

@@ -9,7 +9,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
+/**
+ * TODO 字符长度, 数值精度
+ */
 @Data
 @Builder
 @NoArgsConstructor

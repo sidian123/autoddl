@@ -9,7 +9,8 @@ import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * 标注索引信息. 标注主键, 请用Id注解
+ * 标注索引信息.
+ * 标注主键, 请用Id注解; 暂不支持聚簇索引
  *
  * @author sidian
  * @date 2020/6/9 21:16
